@@ -1,0 +1,5 @@
+{
+    "editor.fontFamily": "Menlo, Monaco, 'Courier New', monospace",
+    "editor.defaultFormatter": "coq-community.vscoq1",
+    "coq.hoverFunction": "check"
+}
