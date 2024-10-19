@@ -34,8 +34,13 @@ Qed.
 
 
 Require Import Coq.Arith.Plus.
+Require Import Coq.Init.Nat.
 Require Import Le.
 Require Import Lt.
+
+Require Import Coq.Arith.PeanoNat.
+
+Import Nat.
 
 Open Scope nat_scope.
 
@@ -78,12 +83,12 @@ Check plus_Snm_nSm.
 
 Print nat.
 
-Fixpoint max n m {struct n} : nat :=
+(* Fixpoint max n m {struct n} : nat :=
   match n, m with
     | O, _ => m
     | S n', O => n
     | S n', S m' => S (max n' m')
-  end.
+  end. *)
 
 
 
@@ -144,17 +149,24 @@ Proof.
   induction n; induction m; simpl in |- *; auto with arith.
 Qed.
 
+
 Lemma max_monotonic: 
   forall a b x y, 
     a <= x -> 
     b <= y -> 
       max a b <= max x y.
 Proof.
-  induction a; induction b; simpl in |- *; auto with arith.
-
-  (* intros a b x y.
-  intros H1 H2. *)
-
+  intros a b x y.
+  intros H1 H2.
+  pose proof (le_max_l a x) as H3.
+  pose proof (le_max_l b y) as H4.
+  pose proof (le_max_r a x) as H5.
+  pose proof (le_max_r b y) as H6.
+  apply max_le_compat.
+  - assumption.
+  - assumption.
+Qed. 
+  
   
 
 
@@ -211,22 +223,224 @@ Proof.
     apply le_n_S.
     Check Nat.le_trans.
     apply Nat.le_trans with (m := max (size t1) (size t2)).
-    + Search "a <= x -> b <= y -> max a b <= max x y"
+    + apply max_le_compat.
+      * assumption.
+      * assumption.
+    + apply max_lub.
+      * auto with arith.
+      * apply le_add_l.
+Qed.
     
-    apply Nat.le_max_l.
-    Check le_S_n.
 
-    apply le_n_S.
-    apply le_S_n.
+Fixpoint mirror {A : Type} (t : tree A) : tree A :=
+  match t with
+  | empty => empty
+  | node a t1 t2 => node a (mirror t2) (mirror t1)
+  end.
+
+Lemma mirror_mirror:
+  forall A (t : tree A),
+    mirror (mirror t) = t.
+Proof.
+  intros A t.
+  induction t.
+  - simpl. reflexivity.
+  - simpl. rewrite IHt1. rewrite IHt2. reflexivity.
+Qed.
+
+
+Ltac know a b new_hyp :=
+  match goal with
+  | [H : a = b |- _] => pose proof H as new_hyp
+  | [H : b = a |- _] => pose proof (eq_sym H) as new_hyp
+  end.
+
+Ltac derive_equality t u :=
+    match goal with
+    | [ H: t = u |- _ ] => idtac (* Equality already in context *)
+    | _ =>
+        let H := fresh "H" in
+        tryif (assert (H : t = u) by (congruence || auto))
+        then idtac
+        else idtac (* Do nothing if equality cannot be deduced *)
+    end.
+
+
+Require Import List.
+Import ListNotations.
+Ltac derive_equalities_rec eqs :=
+    match eqs with
+    | nil => idtac
+    | (?t = ?u) :: ?rest =>
+        derive_equality t u;
+        derive_equalities_rec rest
+    end.
+
+Tactic Notation "derive_equalities" constr(eq_list) :=
+  derive_equalities_rec eq_list.
+
+
+
+Ltac save h1 h2 := 
+  let t := type of h1 in 
+    assert (h2 : t) by (exact h1).
+
+Tactic Notation "save" constr(h1) "as" ident(h2) := 
+  save h1 h2.
+
+Tactic Notation "name" ident(x) "=" constr(e) := 
+  remember e as x; generalize dependent x; intros x.
+Tactic Notation "name" ident(x) "=" constr(e) "as" ident(h) := 
+  remember e as x eqn:h; generalize dependent x; intros x.
+
+
+Lemma big_expr:
+  forall (A : Type) (t : tree A),
+    height t <= size t.
+Proof.
+Admitted.
+
+Require Import Psatz.
+
+Lemma add_le:
+  forall {n m p q: nat},
+    n <= p -> m <= q -> n + m <= p + q.
+Proof.
+  intros n m p q.
+  intros H1 H2.
+  lia.
+Qed.
+
+
+Lemma le_thm:
+  forall {n p q : nat},
+    n <= p -> p <= q -> S n <= S q.
+Proof.
+  intros n p q.
+  intros H1 H2.
+  lia.
+Qed.
+
+
+Lemma no_name_:
+  forall (A : Type) (t : tree A),
+    size t <= (2^(height t)) - 1.
+Proof.
+  intros A.
+  intros t.
+
+  induction t.
+  - simpl. lia.
+  - simpl.
+    pose proof (add_le IHt1 IHt2).
+    pose proof (max_r (size t1) (2 ^ height t1 - 1) IHt1) as H2.
+    pose proof (max_l (2 ^ height t1 - 1) (size t1) IHt1) as H3.
+    pose proof (max_r (size t2) (2 ^ height t2 - 1) IHt2) as H4.
+    pose proof (max_l (2 ^ height t2 - 1) (size t2) IHt2) as H5.
+    cbn [size].
+    lia.
+    rewrite Nat.add_0_r.
+    lia.
+
+
+    apply IHt1 in H0.
+    assert (H1 : 2^(height t1) + (2^(height t2) + 0) - 1 = 2^(height t1) + 2^(height t2) - 1).
+    { lia. }
+    
+    rewrite <- H1.
+    apply le
+
+
+
+
+
+  (* set constants *)
+  name s = (size t) as Hs.
+  name h = (height t) as Hh.
+  generalize dependent s.
+  generalize dependent h.
+
+  (* set constants *)
+  (* remember (size t) as s eqn:Hs.
+  generalize dependent s.
+  remember (height t) as h eqn:Hh.
+  intros s.
+  move s before h.
+  generalize dependent h.
+  generalize dependent s.  *)
+
+
+  induction t.
+  - intros.
+    simpl in *. 
+    rewrite Hs, Hh.
+    simpl. apply le_n.
+  - intros s h.
+    intros Hs Hh.
+    rewrite Hs.
+    simpl.
+    rewrite Hh.
+    cbn [height].
+    cbn [pow].
+    Print "^".
+    simpl.
     
 
 
+    rewrite Hh, Hs.
+    cbn [size].
+    cbn [height].
+
+    simpl.
+    cbn.
+     simpl.
+
+(* sketchbook *)
+
+
+  generalize dependent t.
+  intros t.
+  induction t.
+
+  intros t.
+  induction t.
+
+  simpl in *.
 
 
 
 
 
 
+
+
+
+  Require Import Ltac2.Ltac2.
+  Require Import Ltac2.Option.
+  Require Import Ltac2.Control.
+  Require Import Ltac2.Constr.
+  Require Import Ltac2.Message.
+  Require Import Ltac2.Notations.
+  Require Import Ltac2.Std.
+  (* From Ltac2 Require Import Ltac2. *)
+  Set Ltac2.
+  Ltac2 Type exn ::= [ MyNewException(string) ].
+  
+  Print Ltac2 Std.remember.
+  
+  Ltac2 rec name_many args :=
+    match args with
+    | [] => ()
+    | x :: e :: rest =>
+      let x_ident := match Constr.Unsafe.kind x with
+                      | Constr.Unsafe.Var id => id
+                      | _ => Control.throw (MyNewException "Expected a variable identifier")
+                      end in
+      (* Use 'remember' to assign 'e' to 'x' and add 'x = e' to context *)
+      Control.focus 1 (fun () => Std.remember e x_ident);
+      name_many rest
+    | _ => Control.throw (Ltac2.Exn.UserError (None, "Arguments must be pairs of a variable and an expression"))
+    end.
 
 
 
