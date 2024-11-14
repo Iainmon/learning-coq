@@ -67,9 +67,9 @@ Fixpoint bits_app {n m : nat} (b1 : bits n) (b2 : bits m) : bits (n + m) :=
 
 Definition bit_bin_op : Type := bit -> bit -> bit.
 
-Definition bits_uncons2 {n : nat} (bs cs : bits (S n)) : (bit * bits n) * (bit * bits n) :=
+Definition bits_uncons2 {n : nat} (bs cs : bits (S n)) : (bit * bit) * (bits n * bits n) :=
   match bs,cs with
-  | bcons b bs',bcons c cs' => ((b,bs'),(c,cs'))
+  | bcons b bs',bcons c cs' => ((b,c),(bs',cs'))
   end.
 
 Check bits_uncons2.
@@ -79,6 +79,8 @@ Fixpoint bits_map {n : nat} (f : bit -> bit) (bs : bits n) : bits n :=
   | bnil => bnil
   | bcons b bs' => bcons (f b) (bits_map f bs')
   end.
+
+
 
 
 Fixpoint zip_with {A B C : Type} (f : A -> B -> C)
@@ -157,7 +159,55 @@ Definition head2'' {n : nat} (bs cs : bits (S n)) : bit * bit :=
   end.
 Print head2''. 
 
-(* read me end PRINT ME ON TYPORA , Iain Moncrief, Martin Erwig, Christine Line, Iain Moncrief, Iain Moncrief, Christine Lin, Iain Moncrief, Martin Erwig, Eric Walkingshaw, Iain Moncrief *)
+Definition tail2 {n : nat} (bs cs : bits (S n)) :=
+  match bits_uncons2 bs cs with
+  | (_,(bs',cs')) => (bs',cs')
+  end.
+
+Print tail2.
+Check tail2.
+
+Definition uncons2 (n : nat) (bs cs : bits (S n)) : ((bit * bit) * (bits n * bits n)) :=
+  (head2 bs cs, tail2 bs cs).
+
+Check uncons2.
+
+Fixpoint zip_with_bits {n : nat} (f : bit -> bit -> bit)
+  (v1 v2 : bits n) :=
+  match n return match n with
+                 | 0 => bits 0
+                 | S n' => bits (S n') end with
+  | 0 => bnil
+  | S n' => 
+    match (uncons2 n' v1 v2) (*in ((bit * bit) * ((bits n') * (bits n')))*) with
+    | ((b,c),(bs,cs)) => bcons (f b c) (zip_with_bits f bs cs)
+    end
+  end.
+
+
+
+Definition tail2 {n : nat} (bs cs : bits (S n)) : (bits n * bits n) :=
+  match bs in (bits n') return match n' with
+                              | 0    => IDProp
+                              | S _ => bits n * bits n
+                              end
+  with
+  | bnil => idProp
+  | bcons _ bs' =>
+    match cs in (bits n') return match n' with
+                                | 0    => IDProp
+                                | S _  => bits n * bits n
+                                end
+    with
+    | bnil => idProp
+    | bcons _ cs' => (bs',cs')
+    end
+  end.
+
+Definition head2''' {n : nat} (bs cs : bits (S n)) : bit * bit :=
+  match bits_uncons2 bs cs with
+  | 
+
 
 
 Fixpoint zip_with_bits {n : nat} (f : bit -> bit -> bit)
