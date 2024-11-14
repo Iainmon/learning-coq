@@ -1,0 +1,5 @@
+(executable
+ (name my_plugin)
+ (public_name my_plugin)
+ (modes (byte))
+ (libraries coq.plugin))

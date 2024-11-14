@@ -1,0 +1,6 @@
+# dune init exe my_plugin2
+# OCAMLPARAM: unset
+# Shared cache: disabled
+# Shared cache location: /Users/iainmoncrief/.cache/dune/db
+# Workspace root: /Users/iainmoncrief/Documents/Github/statistics
+# Auto-detected concurrency: 10
